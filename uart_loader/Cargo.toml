@@ -1,0 +1,9 @@
+[package]
+name = "uart_loader"
+version = "0.0.1"
+authors = [ "Nan Wang <wangnangg@gmail.com>" ]
+
+
+[dependencies]
+rlibc = "1.0"
+rpb3_lib = {path = "../rpb3_lib"}
