@@ -26,6 +26,7 @@ SECTIONS
     . = ALIGN(0x10);
     . += 0x1000;
     LD_STACK_PTR = .;
+    __loader_end = .;
 
    /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }
 }

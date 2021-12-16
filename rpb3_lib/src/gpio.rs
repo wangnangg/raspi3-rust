@@ -35,18 +35,6 @@ pub struct GPIO {
     regs: &'static mut GPIORegs,
 }
 
-pub enum GPIOMiniUartTxPin {
-    GPIO14 = 14,
-    GPIO32 = 32,
-    GPIO40 = 40,
-}
-
-pub enum GPIOMiniUartRxPin {
-    GPIO15 = 15,
-    GPIO33 = 33,
-    GPIO41 = 41,
-}
-
 pub enum GPIOFunc {
     In = 0b000,
     Out = 0b001,
@@ -79,15 +67,6 @@ impl GPIO {
         let val = self.regs.gpfsel[fsel_index].read();
         let new_val = bit_range_set(val, func as u32, fsel_offset + 2, fsel_offset);
         self.regs.gpfsel[fsel_index].write(new_val);
-    }
-
-    pub fn set_mini_uart_tx(&mut self, pname: GPIOMiniUartTxPin) {
-        let pin = pname as u32;
-        self.set_gpio_func(pin, GPIOFunc::Alt5);
-    }
-    pub fn set_mini_uart_rx(&mut self, pname: GPIOMiniUartRxPin) {
-        let pin = pname as u32;
-        self.set_gpio_func(pin, GPIOFunc::Alt5);
     }
 
     pub fn set_pull_state(&mut self, pins: &[u32], state: GPIOPullState) {
@@ -137,4 +116,23 @@ impl GPIO {
     }
 }
 
-impl GPIO {}
+pub enum GPIOMiniUartTxPin {
+    GPIO14 = 14,
+    GPIO32 = 32,
+    GPIO40 = 40,
+}
+
+pub enum GPIOMiniUartRxPin {
+    GPIO15 = 15,
+    GPIO33 = 33,
+    GPIO41 = 41,
+}
+
+pub fn set_mini_uart_tx(gpio: &mut GPIO, pname: GPIOMiniUartTxPin) {
+    let pin = pname as u32;
+    gpio.set_gpio_func(pin, GPIOFunc::Alt5);
+}
+pub fn set_mini_uart_rx(gpio: &mut GPIO, pname: GPIOMiniUartRxPin) {
+    let pin = pname as u32;
+    gpio.set_gpio_func(pin, GPIOFunc::Alt5);
+}

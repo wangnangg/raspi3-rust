@@ -27,4 +27,5 @@ version = "0.0.1"
 dependencies = [
  "rlibc",
  "rpb3_lib",
+ "static_assertions",
 ]

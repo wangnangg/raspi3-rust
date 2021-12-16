@@ -26,6 +26,6 @@ _start:
     cbnz    w2, 3b
 
     // jump to main, should not return
-4:  bl      main
+4:  bl      rmain
     // for failsafe, halt this core too
     b       1b

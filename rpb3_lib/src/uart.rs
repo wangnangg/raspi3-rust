@@ -36,9 +36,14 @@ impl Uart {
         return uart;
     }
 
-    pub fn enable_tx_rx(&mut self) {
+    pub fn enable_rx(&mut self) {
         let val = self.regs.cntl.read();
-        self.regs.cntl.write(bit_range_set(val, 0b11, 1, 0));
+        self.regs.cntl.write(bit_range_set(val, 0b1, 0, 0));
+    }
+
+    pub fn enable_tx(&mut self) {
+        let val = self.regs.cntl.read();
+        self.regs.cntl.write(bit_range_set(val, 0b1, 1, 1));
     }
 
     pub fn transmitter_empty(&self) -> bool {

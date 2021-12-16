@@ -6,8 +6,8 @@ extern crate static_assertions;
 
 pub mod aux;
 pub mod gpio;
-pub mod panic;
 pub mod uart;
+pub mod uart_command;
 pub mod utils;
 
 use aux::*;
