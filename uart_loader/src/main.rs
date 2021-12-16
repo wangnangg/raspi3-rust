@@ -13,22 +13,13 @@ mod panic;
 use core::mem::size_of;
 
 use rpb3_lib::gpio::*;
+use rpb3_lib::gpio_leds::*;
 use rpb3_lib::uart::*;
 use rpb3_lib::uart_command::*;
 use rpb3_lib::utils::*;
 use rpb3_lib::*;
 
 global_asm!(include_str!("start.s"));
-
-fn blink_gpio16(periph: &mut Peripherial) {
-    periph.gpio.set_gpio_func(16, GPIOFunc::Out);
-    loop {
-        periph.gpio.set_pin_out(&[16]);
-        delay_s(1);
-        periph.gpio.clear_pin_out(&[16]);
-        delay_s(1);
-    }
-}
 
 fn init_uart(periph: &mut Peripherial) {
     periph.aux.enable_uart();
@@ -37,21 +28,6 @@ fn init_uart(periph: &mut Peripherial) {
     periph.gpio.set_pull_state(&[14, 15], GPIOPullState::Off);
     periph.uart.enable_tx();
     periph.uart.enable_rx();
-}
-
-fn uart_echo(periph: &mut Peripherial) {
-    init_uart(periph);
-    let uart = &mut periph.uart;
-    uart.send(b'h');
-    uart.send(b'!');
-    uart.send(b'\n');
-    loop {
-        let c = uart.recv();
-        match c {
-            b'\r' => uart.send_str("\r\n"),
-            _ => uart.send(c),
-        }
-    }
 }
 
 extern "C" {
@@ -98,6 +74,7 @@ fn do_command(periph: &mut Peripherial, cmd: &Command) {
             } else {
                 let rp = Reply::Jump(Ok(()));
                 reply(&mut periph.uart, &UartReply::new(rp));
+                display_code(&mut periph.gpio, LedCode::Jump as u32);
                 unsafe {
                     asm!("blr  {0}", in(reg) addr);
                 }
@@ -106,33 +83,46 @@ fn do_command(periph: &mut Peripherial, cmd: &Command) {
     }
 }
 
+fn boot_signal(gpio: &mut GPIO) {
+    for code in [0b1000, 0b0100, 0b0010, 0b0001, 0b0000] {
+        display_code(gpio, code);
+        delay_ms(500);
+    }
+}
+
+enum LedCode {
+    WaitMagic = 0b0001,
+    ReadCommand = 0b0010,
+    DoCommand = 0b0100,
+    Jump = 0b1000,
+}
 #[no_mangle]
 pub extern "C" fn rmain() -> ! {
     let mut periph = Peripherial::new();
     init_uart(&mut periph);
+    init_leds(&mut periph.gpio);
 
     //boot signal
-    periph.gpio.set_gpio_func(16, GPIOFunc::Out);
-    periph.gpio.set_pin_out(&[16]);
+    boot_signal(&mut periph.gpio);
 
     const BUFFER_SIZE: usize = 64;
     let mut cmd_buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
     const_assert!(size_of::<UartCommand>() <= BUFFER_SIZE);
 
     loop {
-        periph.gpio.set_pin_out(&[16]);
+        display_code(&mut periph.gpio, LedCode::WaitMagic as u32);
         cmd_buffer[0] = periph.uart.recv();
         if !UartCommand::magic_match(cmd_buffer[0]) {
             continue;
         }
+        display_code(&mut periph.gpio, LedCode::ReadCommand as u32);
         for p in 1..size_of::<UartCommand>() {
             cmd_buffer[p] = periph.uart.recv();
         }
 
-        periph.gpio.clear_pin_out(&[16]);
+        display_code(&mut periph.gpio, LedCode::DoCommand as u32);
         let uart_cmd: &UartCommand =
             unsafe { &*(&cmd_buffer[0] as *const u8 as *const UartCommand) };
         do_command(&mut periph, &uart_cmd.cmd);
-        delay_s(1);
     }
 }

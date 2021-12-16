@@ -29,10 +29,12 @@ impl UartReply {
     }
 }
 
+#[repr(C)]
 pub enum WriteError {
     OverwriteLoader { loader_end: u32 },
 }
 
+#[repr(C)]
 pub enum JumpError {
     JumpInsideLoader { loader_end: u32 },
 }
