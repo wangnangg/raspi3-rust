@@ -22,6 +22,13 @@ use rpb3_lib::*;
 global_asm!(include_str!("start.s"));
 
 fn init_uart(periph: &mut Peripherial) {
+    periph.uart.regs.cntl.write(0);
+    periph.uart.regs.lcr.write(3);
+    periph.uart.regs.mcr.write(0);
+    periph.uart.regs.ier.write(0);
+    periph.uart.regs.iir.write(0xc6);
+    periph.uart.regs.baud.write(270);
+
     periph.aux.enable_uart();
     set_mini_uart_tx(&mut periph.gpio, GPIOMiniUartTxPin::GPIO14);
     set_mini_uart_rx(&mut periph.gpio, GPIOMiniUartRxPin::GPIO15);
@@ -53,7 +60,7 @@ fn do_command(periph: &mut Peripherial, cmd: &Command) {
             let loader_end = get_loader_end();
             let rp;
             if *addr <= loader_end {
-                rp = Reply::Write(Err(WriteError::OverwriteLoader { loader_end }));
+                rp = Reply::Write(Err(CommandError::OverwriteLoader { loader_end }));
             } else {
                 let dest: *mut u8 = (*addr) as *mut u8;
                 for offset in 0..*size {
@@ -67,16 +74,17 @@ fn do_command(periph: &mut Peripherial, cmd: &Command) {
             reply(&mut periph.uart, &UartReply::new(rp));
         }
         Command::Jump { addr } => {
-            let loader_end = unsafe { __loader_end };
+            let loader_end = get_loader_end();
             if *addr <= loader_end {
-                let rp = Reply::Jump(Err(JumpError::JumpInsideLoader { loader_end }));
+                let rp = Reply::Jump(Err(CommandError::JumpInsideLoader { loader_end }));
                 reply(&mut periph.uart, &UartReply::new(rp));
             } else {
                 let rp = Reply::Jump(Ok(()));
                 reply(&mut periph.uart, &UartReply::new(rp));
                 display_code(&mut periph.gpio, LedCode::Jump as u32);
+                let load_addr: u64 = *addr as u64;
                 unsafe {
-                    asm!("blr  {0}", in(reg) addr);
+                    asm!("blr  {0}", in(reg) load_addr);
                 }
             }
         }

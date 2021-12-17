@@ -32,7 +32,7 @@ pub struct GPIORegs {
 }
 
 pub struct GPIO {
-    regs: &'static mut GPIORegs,
+    pub regs: &'static mut GPIORegs,
 }
 
 pub enum GPIOFunc {

@@ -1,15 +1,18 @@
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct UartCommand {
     magic: u8,
     pub cmd: Command,
 }
 
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub enum Command {
     Write { size: u32, addr: u32 },
     Jump { addr: u32 },
 }
 
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct UartReply {
     magic: u8,
@@ -29,20 +32,18 @@ impl UartReply {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
-pub enum WriteError {
+pub enum CommandError {
+    JumpInsideLoader { loader_end: u32 },
     OverwriteLoader { loader_end: u32 },
 }
 
-#[repr(C)]
-pub enum JumpError {
-    JumpInsideLoader { loader_end: u32 },
-}
-
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub enum Reply {
-    Write(Result<(), WriteError>),
-    Jump(Result<(), JumpError>),
+    Write(Result<(), CommandError>),
+    Jump(Result<(), CommandError>),
 }
 
 impl UartCommand {

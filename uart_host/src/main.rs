@@ -14,7 +14,7 @@ use rpb3_lib::uart_command::*;
 enum Error {
     IoError(io::Error),
     SerialError(serialport::Error),
-    AddrError { loader_end: u32, load_addr: u32 },
+    CmdError(CommandError),
     ProtocolError,
 }
 fn from_io_error(err: io::Error) -> Error {
@@ -63,10 +63,28 @@ fn write_to_device(
 
     match &uart_reply.reply {
         Reply::Write(Ok(_)) => Ok(()),
-        Reply::Write(Err(WriteError::OverwriteLoader { loader_end })) => Err(Error::AddrError {
-            load_addr: load_addr,
-            loader_end: *loader_end,
-        }),
+        Reply::Write(Err(err)) => Err(Error::CmdError(*err)),
+        _ => Err(Error::ProtocolError),
+    }
+}
+
+fn jump_to_addr(serial: &mut dyn serialport::SerialPort, load_addr: u32) -> Result<(), Error> {
+    let cmd = UartCommand::new(Command::Jump { addr: load_addr });
+
+    write_all(serial, cmd.byte_view()).map_err(from_io_error)?;
+
+    const BUFFER_SIZE: usize = std::mem::size_of::<UartReply>();
+    let mut reply_buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
+    serial
+        .read_exact(&mut reply_buffer)
+        .map_err(from_io_error)?;
+    assert!(UartReply::magic_match(reply_buffer[0]));
+
+    let uart_reply = unsafe { &*(&reply_buffer as *const [u8; BUFFER_SIZE] as *const UartReply) };
+
+    match &uart_reply.reply {
+        Reply::Jump(Ok(_)) => Ok(()),
+        Reply::Jump(Err(err)) => Err(Error::CmdError(*err)),
         _ => Err(Error::ProtocolError),
     }
 }
@@ -82,11 +100,16 @@ fn main() -> Result<(), Error> {
         .set_timeout(Duration::from_secs(10))
         .map_err(from_serial_error)?;
 
-    let load_addr = 0x90000;
-    match write_to_device(serial.as_mut(), load_addr, &file_content) {
-        Ok(_) => println!("write was successful"),
-        Err(err) => return Err(err),
-    }
+    let load_addr = 0xa0000;
+    write_to_device(serial.as_mut(), load_addr, &file_content).and_then(|_| {
+        println!("write was successful");
+        Ok(())
+    })?;
+
+    jump_to_addr(serial.as_mut(), load_addr).and_then(|_| {
+        println!("jump was successful");
+        Ok(())
+    })?;
 
     return Ok(());
 }

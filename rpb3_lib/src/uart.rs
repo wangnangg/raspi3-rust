@@ -17,7 +17,7 @@ pub struct UartRegs {
 }
 
 pub struct Uart {
-    regs: &'static mut UartRegs,
+    pub regs: &'static mut UartRegs,
 }
 
 impl Uart {
@@ -26,13 +26,6 @@ impl Uart {
         let uart = Uart {
             regs: unsafe { &mut *(base as *mut UartRegs) },
         };
-        uart.regs.cntl.write(0);
-        uart.regs.lcr.write(3);
-        uart.regs.mcr.write(0);
-        uart.regs.ier.write(0);
-        uart.regs.iir.write(0xc6);
-        uart.regs.baud.write(270);
-
         return uart;
     }
 
