@@ -1,3 +1,4 @@
+/* changing this file requires clean bulid */
 
 SECTIONS
 {
