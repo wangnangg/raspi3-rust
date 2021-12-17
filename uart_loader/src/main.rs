@@ -16,7 +16,6 @@ use rpb3_lib::gpio::*;
 use rpb3_lib::gpio_leds::*;
 use rpb3_lib::uart::*;
 use rpb3_lib::uart_command::*;
-use rpb3_lib::utils::*;
 use rpb3_lib::*;
 
 global_asm!(include_str!("start.s"));
@@ -91,13 +90,6 @@ fn do_command(periph: &mut Peripherial, cmd: &Command) {
     }
 }
 
-fn boot_signal(gpio: &mut GPIO) {
-    for code in [0b1000, 0b0100, 0b0010, 0b0001, 0b0000] {
-        display_code(gpio, code);
-        delay_ms(500);
-    }
-}
-
 enum LedCode {
     WaitMagic = 0b0001,
     ReadCommand = 0b0010,
@@ -109,9 +101,6 @@ pub extern "C" fn rmain() -> ! {
     let mut periph = Peripherial::new();
     init_uart(&mut periph);
     init_leds(&mut periph.gpio);
-
-    //boot signal
-    boot_signal(&mut periph.gpio);
 
     const BUFFER_SIZE: usize = 64;
     let mut cmd_buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
