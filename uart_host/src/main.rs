@@ -100,7 +100,8 @@ fn main() -> Result<(), Error> {
         .set_timeout(Duration::from_secs(10))
         .map_err(from_serial_error)?;
 
-    let load_addr = 0xa0000;
+    let load_addr = 0xb0000;
+    println!("loading {0} to 0x{1:x}", bin_path, load_addr);
     write_to_device(serial.as_mut(), load_addr, &file_content).and_then(|_| {
         println!("write was successful");
         Ok(())

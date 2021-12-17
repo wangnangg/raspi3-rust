@@ -1,7 +1,7 @@
 
 SECTIONS
 {
-    . = 0xa0000;
+    . = 0x0;
     .text : {
           KEEP(*(.text.boot))
           *(.text .text.*)
