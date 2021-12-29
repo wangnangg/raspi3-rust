@@ -4,6 +4,8 @@
 #[macro_use]
 extern crate static_assertions;
 
+#[cfg(feature = "aarch64")]
+pub mod aarch64;
 pub mod aux;
 pub mod gpio;
 pub mod gpio_leds;

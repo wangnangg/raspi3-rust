@@ -37,7 +37,7 @@ impl<T> RW<T> {
     }
 }
 
-pub fn bit_range_mask32(msb: u32, lsb: u32) -> u32 {
+pub fn bit_range_mask(msb: u32, lsb: u32) -> u32 {
     let width = 32;
     assert!(msb < width);
     assert!(lsb < width);
@@ -46,20 +46,33 @@ pub fn bit_range_mask32(msb: u32, lsb: u32) -> u32 {
     return ((!0u32) << lsb) & val;
 }
 
+pub fn bit_range_mask64(msb: u32, lsb: u32) -> u64 {
+    let width = 64;
+    assert!(msb < width);
+    assert!(lsb < width);
+    assert!(msb >= lsb);
+    let val = (!0u64) >> (width - 1 - msb);
+    return ((!0u64) << lsb) & val;
+}
+
 pub fn bit_range_clear(val: u32, msb: u32, lsb: u32) -> u32 {
-    val & (!bit_range_mask32(msb, lsb))
+    val & (!bit_range_mask(msb, lsb))
 }
 
 pub fn bit_range_set(old_val: u32, set_val: u32, msb: u32, lsb: u32) -> u32 {
     let cleared_val = bit_range_clear(old_val, msb, lsb);
-    let set_mask = bit_range_mask32(msb - lsb, 0);
+    let set_mask = bit_range_mask(msb - lsb, 0);
     let final_set_val = set_val & set_mask;
     assert_eq!(final_set_val, set_val);
     cleared_val | (final_set_val << lsb)
 }
 
 pub fn bit_range_get(val: u32, msb: u32, lsb: u32) -> u32 {
-    (val & bit_range_mask32(msb, lsb)) >> lsb
+    (val & bit_range_mask(msb, lsb)) >> lsb
+}
+
+pub fn bit_range_get64(val: u64, msb: u32, lsb: u32) -> u64 {
+    (val & bit_range_mask64(msb, lsb)) >> lsb
 }
 
 pub fn delay(cycle_count: u64) {

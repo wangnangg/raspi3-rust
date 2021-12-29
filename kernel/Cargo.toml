@@ -6,4 +6,5 @@ authors = [ "Nan Wang <wangnangg@gmail.com>" ]
 
 [dependencies]
 rlibc = "1.0"
-rpb3_lib = {path = "../rpb3_lib"}
+rpb3_lib = {path = "../rpb3_lib", features=["aarch64"]}
+spin = "0.9.2"

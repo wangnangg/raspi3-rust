@@ -24,6 +24,14 @@ SECTIONS
         __bss_end = .;
     }
 
+    . += 1024 * 1024;
+    . = ALIGN(16);
+    __main_stack = .;
+
+    . += 1024 * 1024;
+    . = ALIGN(16);
+    __exception_stack = .;
+
    /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }
 }
 
