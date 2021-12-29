@@ -60,46 +60,82 @@ el1_start:
 3:  wfe
     b       3b
 
+context_save:
+    //put syndrome to x1
+    mrs x1, ESR_EL1
+    //push caller-saved registers: x0..x18, x30 (lr)
+    stp x0, x1, [SP, #-16]!
+    stp x2, x3, [SP, #-16]!
+    stp x4, x5, [SP, #-16]!
+    stp x6, x7, [SP, #-16]!
+    stp x8, x9, [SP, #-16]!
+    stp x10, x11, [SP, #-16]!
+    stp x12, x13, [SP, #-16]!
+    stp x14, x15, [SP, #-16]!
+    stp x16, x17, [SP, #-16]!
+    stp x18, x30, [SP, #-16]!
+    bl handle_exception
+context_restore:
+    ldp x18, x30, [SP], #16
+    ldp x16, x17, [SP], #16
+    ldp x14, x15, [SP], #16
+    ldp x12, x13, [SP], #16
+    ldp x10, x11, [SP], #16
+    ldp x8, x9, [SP], #16
+    ldp x6, x7, [SP], #16
+    ldp x4, x5, [SP], #16
+    ldp x2, x3, [SP], #16
+    ldp x0, x1, [SP], #16
+    ret
+
+.macro handler source, kind
+.align 7
+stp     lr, x0, [SP, #-16]!
+mov     x0, \source
+movk    x0, \kind, LSL #16
+bl      context_save
+ldp     lr, x0, [SP], #16
+eret
+.endm
+
 //align to table size : 16 entreis * 128 bytes = 2048
 .align 11
 el1_exception_table:
 
 //same level with SP0
-.align 7 //align to entry size: 128 bytes
 //synchronous
-.align 7 //align to entry size: 128 bytes
+handler 0, 0
 //irq
-.align 7 //align to entry size: 128 bytes
+handler 0, 1
 //fiq
-.align 7 //align to entry size: 128 bytes
+handler 0, 2
 //serror
+handler 0, 3
 
 //same level with SPx
-.align 7 //align to entry size: 128 bytes
 //synchronous
-.align 7 //align to entry size: 128 bytes
+handler 1, 0
 //irq
-.align 7 //align to entry size: 128 bytes
+handler 1, 1
 //fiq
-.align 7 //align to entry size: 128 bytes
+handler 1, 2
 //serror
+handler 1, 3
 
 //lower level with AArch64
-.align 7 //align to entry size: 128 bytes
-//synchronous
-.align 7 //align to entry size: 128 bytes
+handler 2, 0
 //irq
-.align 7 //align to entry size: 128 bytes
+handler 2, 1
 //fiq
-.align 7 //align to entry size: 128 bytes
+handler 2, 2
 //serror
+handler 2, 3
 
 //lower level with AArch32
-.align 7 //align to entry size: 128 bytes
-//synchronous
-.align 7 //align to entry size: 128 bytes
+handler 3, 0
 //irq
-.align 7 //align to entry size: 128 bytes
+handler 3, 1
 //fiq
-.align 7 //align to entry size: 128 bytes
+handler 3, 2
 //serror
+handler 3, 3

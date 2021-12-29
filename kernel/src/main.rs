@@ -11,6 +11,7 @@ extern crate rpb3_lib;
 extern crate spin;
 
 global_asm!(include_str!("start.s"));
+mod exception;
 mod panic;
 #[cfg(test)]
 mod test;
@@ -72,14 +73,20 @@ pub extern "C" fn rmain() -> ! {
     let mut periph = Peripherial::new();
     display_code(
         &mut periph.gpio,
-        (aarch64::get_exception_level() as u32) | 0b1000,
+        (aarch64::read_current_el() as u32) | 0b1000,
     );
     delay_s(1);
+
     let mut fmt_buffer: [u8; 8] = [0; 8];
-    format_hex_into(&mut fmt_buffer, aarch64::read_sp() as u32);
+    periph.uart.send_str("daif: ");
+    format_hex_into(&mut fmt_buffer, aarch64::read_daif() as u32);
     let fmt_str = core::str::from_utf8(&fmt_buffer).unwrap();
-    periph.uart.send_str("hello\r\n");
     periph.uart.send_str(fmt_str);
+    periph.uart.send_str("\r\n");
+
+    unsafe {
+        asm!("brk 2");
+    }
     uart_echo(&mut periph.uart);
     // let abool = AtomicBool::new(false);
     // let res = abool.compare_exchange(false, true, core::sync::atomic::Ordering::Acquire, core::sync::atomic::Ordering::Relaxed);
